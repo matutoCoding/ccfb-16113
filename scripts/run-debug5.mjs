@@ -1,0 +1,14 @@
+import { chromium } from 'playwright';
+import { createServer } from 'vite';
+const server = await createServer({ server: { port: 5196, host: '127.0.0.1' }, logLevel: 'error', force: true });
+await server.listen();
+const browser = await chromium.launch({ args: ['--use-angle=gl', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage();
+const errors = [];
+page.on('pageerror', e => errors.push(String(e)));
+await page.goto('http://127.0.0.1:5196/scripts/webgl-debug5.html');
+await page.waitForFunction(() => window.__DEBUG5__ !== undefined, { timeout: 30000 });
+console.log(JSON.stringify(await page.evaluate(() => window.__DEBUG5__), null, 2));
+if (errors.length) console.log('ERRORS:', errors.join('\n'));
+await browser.close();
+await server.close();
